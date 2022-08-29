@@ -4,13 +4,13 @@ const { ObjectId } = mongoose.Schema;
 
 const userSchema = mongoose.Schema(
   {
-    first_name: {
+    firstName: {
       type: String,
       required: [true, 'first name is required'],
       trim: true,
       text: true,
     },
-    last_name: {
+    lastName: {
       type: String,
       required: [true, 'last name is required'],
       trim: true,
@@ -142,4 +142,5 @@ const userSchema = mongoose.Schema(
   },
 );
 
+// exports.User = mongoose.model('User', userSchema);
 exports.User = mongoose.model('User', userSchema);
