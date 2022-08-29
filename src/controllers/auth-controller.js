@@ -6,6 +6,8 @@ const {
   validateUsername,
 } = require('../helpers/validation');
 const { generateToken } = require('../helpers/tokens');
+const { getBaseUrl } = require('../helpers/getBaseUrl');
+const { sendVerificationEmail } = require('../helpers/mailer');
 
 exports.register = async (req, res, next) => {
   try {
@@ -78,8 +80,23 @@ exports.register = async (req, res, next) => {
       '30m',
     );
 
-    res.json(user);
+    const url = `${getBaseUrl()}/activate/${emailVerificationToken}`;
+    sendVerificationEmail(user.email, user.firstName, url);
+
+    const token = generateToken({ id: user._id.toString() }, '7d');
+
+    res.send({
+      id: user._id,
+      username: user.username,
+      picture: user.picture,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      token: token,
+      verified: user.verified,
+      message: 'Register Success ! please activate your email to start',
+    });
   } catch (e) {
+    console.log(e);
     res.status(500).json({ message: e.message });
   }
 };
