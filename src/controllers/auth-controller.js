@@ -102,21 +102,70 @@ exports.register = async (req, res, next) => {
 };
 
 exports.activateAccount = async (req, res) => {
-  const { token } = req.body;
-  const user = verifyToken(token);
+  try {
+    const { token } = req.body;
+    const user = verifyToken(token);
 
-  if (!user) {
-    return res.status(403).json({ message: 'Invalid or Expired token' });
+    if (!user) {
+      return res.status(403).json({ message: 'Invalid or Expired token' });
+    }
+
+    const check = await User.findById(user.id);
+
+    if (check.verified) {
+      return res
+        .status(400)
+        .json({ message: 'this email is already activated' });
+    } else {
+      await User.findByIdAndUpdate(user.id, { verified: true });
+      return res
+        .status(200)
+        .json({ message: 'Account has been activated successfully.' });
+    }
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
+};
 
-  const check = await User.findById(user.id);
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-  if (check.verified) {
-    return res.status(400).json({ message: 'this email is already activated' });
-  } else {
-    await User.findByIdAndUpdate(user.id, { verified: true });
-    return res
-      .status(200)
-      .json({ message: 'Account has been activated successfully.' });
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({
+        message: 'Invalid credentials.Please try again.',
+      });
+    }
+
+    if (!user.verified) {
+      return res.status(400).json({
+        message:
+          'Your account is not verified yet. Please activate your account and try again.',
+      });
+    }
+
+    const check = await bcrypt.compare(password, user.password);
+    if (!check) {
+      return res.status(400).json({
+        message: 'Invalid credentials.Please try again.',
+      });
+    }
+
+    const token = generateToken({ id: user._id.toString() }, '7d');
+
+    res.send({
+      id: user._id,
+      username: user.username,
+      picture: user.picture,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      token: token,
+      verified: user.verified,
+      message: 'Login Success',
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
