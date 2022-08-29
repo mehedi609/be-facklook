@@ -5,7 +5,7 @@ const {
   validateLength,
   validateUsername,
 } = require('../helpers/validation');
-const { generateToken } = require('../helpers/tokens');
+const { generateToken, verifyToken } = require('../helpers/tokens');
 const { getBaseUrl } = require('../helpers/getBaseUrl');
 const { sendVerificationEmail } = require('../helpers/mailer');
 
@@ -98,5 +98,25 @@ exports.register = async (req, res, next) => {
   } catch (e) {
     console.log(e);
     res.status(500).json({ message: e.message });
+  }
+};
+
+exports.activateAccount = async (req, res) => {
+  const { token } = req.body;
+  const user = verifyToken(token);
+
+  if (!user) {
+    return res.status(403).json({ message: 'Invalid or Expired token' });
+  }
+
+  const check = await User.findById(user.id);
+
+  if (check.verified) {
+    return res.status(400).json({ message: 'this email is already activated' });
+  } else {
+    await User.findByIdAndUpdate(user.id, { verified: true });
+    return res
+      .status(200)
+      .json({ message: 'Account has been activated successfully.' });
   }
 };
