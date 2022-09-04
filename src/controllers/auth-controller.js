@@ -110,6 +110,12 @@ exports.activateAccount = async (req, res) => {
       return res.status(403).json({ message: 'Invalid or Expired token' });
     }
 
+    if (req.user.id !== user.id) {
+      return res.status(400).json({
+        message: "You don't have the authorization to complete this operation.",
+      });
+    }
+
     const check = await User.findById(user.id);
 
     if (check.verified) {
@@ -136,13 +142,6 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         message: 'Invalid credentials.Please try again.',
-      });
-    }
-
-    if (!user.verified) {
-      return res.status(400).json({
-        message:
-          'Your account is not verified yet. Please activate your account and try again.',
       });
     }
 
