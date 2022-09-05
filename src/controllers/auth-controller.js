@@ -110,6 +110,12 @@ exports.activateAccount = async (req, res) => {
       return res.status(403).json({ message: 'Invalid or Expired token' });
     }
 
+    if (req.user.id !== user.id) {
+      return res.status(400).json({
+        message: "You don't have the authorization to complete this operation.",
+      });
+    }
+
     const check = await User.findById(user.id);
 
     if (check.verified) {
@@ -139,13 +145,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    if (!user.verified) {
-      return res.status(400).json({
-        message:
-          'Your account is not verified yet. Please activate your account and try again.',
-      });
-    }
-
     const check = await bcrypt.compare(password, user.password);
     if (!check) {
       return res.status(400).json({
@@ -163,6 +162,31 @@ exports.login = async (req, res) => {
       lastName: user.lastName,
       token: token,
       verified: user.verified,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.reSendVerification = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.verified) {
+      return res.status(400).json({
+        message: 'This account is already activated.',
+      });
+    }
+
+    const emailVerificationToken = generateToken(
+      { id: user._id.toString() },
+      '30m',
+    );
+
+    const url = `${getBaseUrl()}/activate/${emailVerificationToken}`;
+    sendVerificationEmail(user.email, user.firstName, url);
+
+    return res.status(200).json({
+      message: 'Email verification link has been sent to your email.',
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
