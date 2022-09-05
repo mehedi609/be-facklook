@@ -4,6 +4,7 @@ const {
   register,
   activateAccount,
   login,
+  reSendVerification,
 } = require('../controllers/auth-controller');
 const { authMiddleware } = require('../middlewares/auth-middleware');
 
@@ -11,8 +12,9 @@ const router = Router();
 
 router.group('/auth', (router) => {
   router.post('/register', register);
-  router.post('/activate', authMiddleware, activateAccount);
   router.post('/login', login);
+  router.post('/activate', authMiddleware, activateAccount);
+  router.post('/reSendVerification', authMiddleware, reSendVerification);
 });
 
 module.exports = router;
